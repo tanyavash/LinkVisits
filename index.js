@@ -12,18 +12,37 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(async (req, res, next) => {
   try{
-    
-    let click = await Click.findOne();
+    const ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    console.log('incoming request', ipAddress);
+    //req.clientIp = ipAddress;
+
+    await Click.create({
+        ipAddress
+    });
+
+    // next();
+
+    let click = await Click.findOne({ ipAddress });
+    // // console.log(click);
+    // // console.log(typeof(click));  
 
     if(!click) {
-      click = new Click();
+    // //   //console.log('Creating new document for IP address:', ipAddress);
+    click = new Click({ ipAddress: req.clientIp, count: 1 });
+    // //   await click.save();
+      }
+
+    // // //console.log('Updating document for IP address:', ipAddress);
+    else{ 
+      click.count++;
     }
+    
 
-    click.count++;
+      await click.save();
+    console.log('Count incremented for IP address:', ipAddress);
 
-    await click.save();
-
-    next();
+    //  req.clientIp = ipAddress;
+     next();
   }
   catch (error){
     console.error('error incrementing:' , error);
@@ -34,7 +53,12 @@ app.use(async (req, res, next) => {
 
 app.get('/clicks', async (req, res) => {
   try{
-    const click = await Click.findOne();
+    const ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
+    //const clientIp = req.clientIp;
+    console.log(`Client IP address: ${ipAddress}`);
+
+    const click = await Click.findOne({ ipAddress });
     res.json({ count: click ? click.count : 0 });
   }
   catch (error) {
