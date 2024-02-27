@@ -42,7 +42,6 @@ app.use(async (req, res, next) => {
   }
 });
 
-
 app.get('/clicks', async (req, res) => {
   try{
     //retreiving the IP address
